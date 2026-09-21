@@ -5,14 +5,23 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="css/main.css" />
+    <!-- Solo el glifo U+1FAF6 (el 🫶 de la despedida), 2 KB. Es Emoji 14 (2021) y no
+         viene en Android 12, que es lo que trae el teléfono de quien recibe esto: sin
+         esto le saldría un cuadrito vacío. -->
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&amp;text=%F0%9F%AB%B6&amp;display=swap"
+    />
     <link rel="icon" href="img/flowers.png" type="image/x-icon" />
     <title>Flower</title>
   </head>
   <body class="animations-paused">
     <audio src="sound/cancion.mp3" preload="auto"></audio>
     <div id="lyrics"></div>
-    <h1 class="titulo">Estas flores amarillas son un reflejo de la alegría que traes a mi vida. <br> <br>
-      Gracias por iluminar mis días con tu presencia.</h1>
+    <h1 class="titulo">Estas flores amarillas son un reflejo de la alegría que traes a mi vida <br> <br>
+      Gracias por iluminar mis días con tu presencia <br> <br>
+      Te quiero mucho, Abi 🫶</h1>
   
     <div class="night"></div>
     <div class="flowers">
