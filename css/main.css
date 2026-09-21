@@ -10,13 +10,35 @@
   --dark-color: #000;
 }
 
+/* Las hojas de las flores se salen unos px por los lados. Con el recorte solo en el
+   `body`, Chrome en Android ensancha igualmente el viewport de la pagina para abarcar
+   ese desbordamiento (medido: 416px de ancho en una pantalla de 384), y eso deja ver
+   franjas del fondo, permite desplazarse a los lados y saca los indicadores de scroll.
+   Recortando tambien en el `html` el documento deja de tener desbordamiento que abarcar. */
+html {
+  overflow: hidden;
+  height: 100%;
+  height: 100svh;
+  background-color: var(--dark-color);
+  overscroll-behavior: none;
+}
+
 body {
   display: flex;
   align-items: flex-end;
   justify-content: center;
   min-height: 100vh;
+  /* `100vh` en un telefono es el viewport GRANDE (sin barra de URL), asi que el jardin
+     quedaba anclado por debajo de lo visible. Con el scroll ya bloqueado esa franja era
+     inalcanzable. `svh` es el viewport chico: lo que de verdad se ve.
+     Esto reencuadra toda la escena de golpe, no solo las flores: el `perspective` de
+     abajo convierte al body en el bloque contenedor de #lyrics, .titulo y .night, que
+     se posicionan contra SU caja, no contra la ventana.
+     En escritorio `svh` == `vh`, asi que ahi no cambia nada. */
+  min-height: 100svh;
   background-color: var(--dark-color);
   overflow: hidden;
+  overscroll-behavior: none;
   perspective: 1000px;
 }
 
@@ -1731,7 +1753,9 @@ body, h1, p {
 /* Estilos generales */
 body {
   font-family: 'Arial', sans-serif;
-  background-color: #f7f7f7;
+  /* Era #f7f7f7: casi blanco. Solo lo tapaba el div .night, del tamano del viewport, asi
+     que cualquier pixel de mas (desplazamiento, rebote, zoom) mostraba una franja blanca. */
+  background-color: var(--dark-color);
   color: #333;
 }
 

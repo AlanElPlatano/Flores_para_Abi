@@ -4,6 +4,9 @@
 }
 body{
     color: azure;
+    /* Sin esto, el margen de 8px que el navegador le pone al body desbordaba la página
+       en horizontal (con width: 100%) y el texto quedaba pegado al borde izquierdo. */
+    margin: 0;
     width: 100%;
     height: 82vh;
     display: flex;
@@ -72,6 +75,8 @@ body{
 .description{
     font-size: 1.5rem;
     margin-bottom: 20px;
+    text-align: center;
+    padding: 0 16px;
 }
 
 .button a{
@@ -87,8 +92,11 @@ body{
         font-weight: 800;
         text-align: center;
     }
+    /* Antes: 2rem, o sea MÁS grande que en escritorio. No cabía en una pantalla de
+       teléfono, partía el renglón y dejaba la carita sola a la izquierda. Ahora escala
+       con el ancho y entra en un solo renglón hasta en 320px. */
     .description{
-        font-size: 2rem;
+        font-size: clamp(1rem, 5.4vw, 1.5rem);
     }
     
     .button a{
