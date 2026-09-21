@@ -8,6 +8,7 @@ const lyricsContainer = document.querySelector("#lyrics");
 const closingMessage = document.querySelector(".titulo");
 
 let lines = [];
+let closingMessageTime = Infinity;
 let activeLine = null;
 let sungSyllableCount = 0;
 
@@ -102,7 +103,7 @@ function scheduleLines(scheduled) {
   });
   scheduled.forEach((line, index) => {
     const next = scheduled[index + 1];
-    line.hideAt = next ? next.showAt : Infinity;
+    line.hideAt = next ? next.showAt : line.end;
   });
 }
 
@@ -145,6 +146,8 @@ function highlightSungSyllables(line, time) {
   sungSyllableCount = count;
 }
 
+/* El mensaje entra cuando acaban las voces, no cuando acaba el audio: lo que
+   resta es instrumental y suena de fondo mientras se lee. */
 function renderFrame() {
   if (audio.ended) {
     return;
@@ -155,14 +158,10 @@ function renderFrame() {
   if (line) {
     highlightSungSyllables(line, time);
   }
+  const vocalsFinished = time >= closingMessageTime;
+  document.body.classList.toggle("song-ended", vocalsFinished);
+  closingMessage.classList.toggle("is-visible", vocalsFinished);
   requestAnimationFrame(renderFrame);
-}
-
-/* La última línea se queda hasta aquí: es este relevo el que la retira. */
-function showClosingMessage() {
-  setActiveLine(null);
-  document.body.classList.add("song-ended");
-  closingMessage.classList.add("is-visible");
 }
 
 function waitForTap() {
@@ -196,7 +195,7 @@ async function start() {
   for (const line of lines) {
     lyricsContainer.append(line.element);
   }
-  audio.addEventListener("ended", showClosingMessage, { once: true });
+  closingMessageTime = lines[lines.length - 1].end;
 
   await startPlayback();
   document.body.classList.remove("animations-paused");
