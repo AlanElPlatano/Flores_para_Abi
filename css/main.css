@@ -33,13 +33,19 @@ body {
   text-align: center;
 }
 @media only screen and (max-width: 600px) {
-  /* Estilos específicos para dispositivos con un ancho máximo de 600px */
+  /* El bloque se ancla al viewport (antes: margin-bottom fijo de 530px, un valor del
+     tutorial que no escalaba) y crece hacia arriba, así dos renglones caen siempre
+     sobre cielo limpio.
+     Las flores miden en vmin, o sea que en pantallas angostas se comen más alto: la
+     cabeza más alta queda a ~115vw del borde inferior. Por eso la posición toma lo que
+     sea más alto de las dos medidas, y no choca ni en 320px de ancho. */
   #lyrics {
-      font-size: 14px; /* Reduce el tamaño del texto para dispositivos más pequeños */
-      margin-bottom: 530px;
-      letter-spacing: 3px;
+      font-size: clamp(16px, 5vw, 20px);
+      letter-spacing: 2px;
+      margin-bottom: 0;
+      bottom: max(64vh, calc(115vw + 24px));
+      width: min(90vw, 520px);
   }
-
 }
 
 .lyrics__line {
@@ -98,6 +104,58 @@ body.awaiting-tap::after {
 
 .titulo.is-visible {
   opacity: 1;
+}
+
+@media only screen and (max-width: 600px) {
+  /* Reparte el texto entre los renglones en vez de dejar una palabra suelta abajo. */
+  .lyrics__line {
+      text-wrap: balance;
+  }
+
+  /* "Toca la pantalla para comenzar" no cabe en un renglón a 360px con 20px + 4px de
+     espaciado; encoge con la pantalla. */
+  body.awaiting-tap::after {
+      font-size: clamp(16px, 4.6vw, 20px);
+      letter-spacing: 3px;
+  }
+
+  /* El mensaje final no tenía reglas propias en móvil: heredaba letter-spacing: 10px y
+     caía en nueve renglones encima de las flores. Aquí se compacta y se coloca debajo de
+     las cabezas, con la misma proporción que en escritorio (termina al 80% del alto). */
+  .titulo {
+      font-size: clamp(15px, 4.4vw, 19px);
+      letter-spacing: 3px;
+      line-height: 1.6;
+      margin-bottom: 0;
+      bottom: 20vh;
+      max-width: 88vw;
+      padding: 0 12px;
+      text-wrap: pretty;
+  }
+}
+
+/* Pantallas bajas y anchas: el teléfono en horizontal, o una ventana de escritorio
+   achatada. Aquí mandan las reglas de escritorio y el mensaje mide ~260px de alto, así
+   que con margin-bottom: 180px se salía por arriba de la pantalla (el overflow: hidden
+   del body se comía el primer renglón). Las flores miden en vmin, que apaisado es el
+   alto: la cabeza más alta queda a ~72vh del borde inferior.
+   La condición min-width la mantiene separada del bloque móvil de arriba, que resuelve
+   el caso angosto con otra fórmula. */
+@media only screen and (max-height: 520px) and (min-width: 601px) {
+  #lyrics {
+      font-size: clamp(16px, 4.8vh, 28px);
+      letter-spacing: 3px;
+      margin-bottom: 0;
+      bottom: calc(72vh + 24px);
+  }
+
+  .titulo {
+      font-size: clamp(15px, 4.4vh, 22px);
+      letter-spacing: 6px;
+      line-height: 1.5;
+      margin-bottom: 0;
+      bottom: 12vh;
+  }
 }
 @keyframes fadeIn {
   from {
