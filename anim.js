@@ -164,28 +164,78 @@ function renderFrame() {
   requestAnimationFrame(renderFrame);
 }
 
-function waitForTap() {
+/* El evento que habilita el audio no es el mismo en todos los navegadores: iOS Safari
+   solo cuenta el gesto en `touchend`/`click`, no en `pointerdown`. Se escuchan varios y
+   gana el primero. */
+const TAP_EVENTS = ["pointerup", "touchend", "click"];
+
+/* Si el audio no despega, mejor un jardín en silencio que una pantalla negra. */
+const SILENT_START_MS = 6000;
+
+/* Toques que se le piden al usuario antes de rendirse y seguir sin música. */
+const MAX_TAP_ATTEMPTS = 3;
+
+function startAnimations() {
+  document.body.classList.remove("animations-paused");
+}
+
+/* El plazo corre mientras se espera que el audio despegue, pero no mientras se espera
+   el toque del usuario: ahí la página no está rota, solo está esperando. */
+let silentStartTimer = 0;
+
+function armSilentStart() {
+  window.clearTimeout(silentStartTimer);
+  silentStartTimer = window.setTimeout(startAnimations, SILENT_START_MS);
+}
+
+function disarmSilentStart() {
+  window.clearTimeout(silentStartTimer);
+}
+
+/* `play()` se llama DENTRO del manejador del toque, de forma síncrona: si se llama
+   después de un `await`, Safari ya no lo considera parte del gesto del usuario. */
+function playOnNextTap() {
   document.body.classList.add("awaiting-tap");
-  return new Promise((resolve) => {
-    document.addEventListener(
-      "pointerdown",
-      () => {
-        document.body.classList.remove("awaiting-tap");
-        resolve();
-      },
-      { once: true }
-    );
+  return new Promise((resolve, reject) => {
+    const onTap = () => {
+      for (const type of TAP_EVENTS) {
+        document.removeEventListener(type, onTap);
+      }
+      document.body.classList.remove("awaiting-tap");
+      armSilentStart();
+      audio.play().then(resolve, reject);
+    };
+    for (const type of TAP_EVENTS) {
+      document.addEventListener(type, onTap);
+    }
   });
 }
 
-/* Los navegadores bloquean el autoplay sin interacción previa en el sitio. */
+/* Los navegadores bloquean el autoplay sin interacción previa en el sitio. Si tras el
+   toque sigue bloqueado se vuelve a pedir el gesto, en vez de rendirse: antes, un
+   segundo rechazo de `play()` dejaba la página muerta — las flores congeladas (que es
+   como no verlas) y sin música ni letras. */
 async function startPlayback() {
+  /* El primer intento también necesita plazo: si `play()` se queda colgado (pasa con
+     red lenta) no se rechaza nunca, y sin esto no se mostraría ni el aviso. */
+  armSilentStart();
   try {
     await audio.play();
+    return;
   } catch {
-    await waitForTap();
-    await audio.play();
+    disarmSilentStart();
   }
+  /* Tras el toque el plazo ya no se desarma: si el navegador se sigue negando, el
+     jardín florece igual, aunque sea en silencio. */
+  for (let attempt = 0; attempt < MAX_TAP_ATTEMPTS; attempt += 1) {
+    try {
+      await playOnNextTap();
+      return;
+    } catch {
+      /* el navegador lo rechazó igual: se vuelve a pedir el toque */
+    }
+  }
+  startAnimations();
 }
 
 async function start() {
@@ -197,9 +247,14 @@ async function start() {
   }
   closingMessageTime = lines[lines.length - 1].end;
 
-  await startPlayback();
-  document.body.classList.remove("animations-paused");
+  /* Las flores arrancan cuando de verdad empieza a sonar la música, no cuando `play()`
+     devuelve: en un teléfono con red lenta esa promesa puede tardar o no resolverse. */
+  audio.addEventListener("playing", startAnimations, { once: true });
+  /* Y si el mp3 no carga (404, red caída, formato), que el jardín florezca igual. */
+  audio.addEventListener("error", startAnimations, { once: true });
+
   requestAnimationFrame(renderFrame);
+  await startPlayback();
 }
 
 start();

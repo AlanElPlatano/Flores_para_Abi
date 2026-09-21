@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Diagnóstico</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 12px;
+        background: #000;
+        color: #cfc;
+        font: 13px/1.45 ui-monospace, "Courier New", monospace;
+        word-break: break-word;
+      }
+      h1 { font-size: 15px; color: #fddd25; margin: 0 0 8px; }
+      button {
+        display: block;
+        width: 100%;
+        padding: 18px;
+        margin-bottom: 12px;
+        font: bold 18px/1 sans-serif;
+        color: #000;
+        background: #fddd25;
+        border: 0;
+        border-radius: 8px;
+      }
+      #log { white-space: pre-wrap; }
+      .mal { color: #ff6b6b; }
+      .bien { color: #7CFC7C; }
+    </style>
+  </head>
+  <body>
+    <h1>Diagnóstico — flores amarillas</h1>
+    <button id="tocar">TOCAR AQUÍ PARA PROBAR EL AUDIO</button>
+    <div id="log"></div>
+
+    <script>
+      const logEl = document.getElementById("log");
+      const t0 = Date.now();
+
+      function log(texto, clase) {
+        const ms = String(Date.now() - t0).padStart(5, " ");
+        const linea = document.createElement("div");
+        if (clase) linea.className = clase;
+        linea.textContent = ms + "ms  " + texto;
+        logEl.append(linea);
+      }
+
+      const audio = new Audio("sound/cancion.mp3");
+      audio.preload = "auto";
+
+      const CODIGOS = {
+        1: "ABORTED (cancelado)",
+        2: "NETWORK (falló la red)",
+        3: "DECODE (no pudo decodificar el mp3)",
+        4: "SRC_NOT_SUPPORTED (no encuentra el archivo o no soporta el formato)",
+      };
+
+      function estado() {
+        return (
+          "readyState=" + audio.readyState +
+          " networkState=" + audio.networkState +
+          " duration=" + audio.duration +
+          " currentTime=" + audio.currentTime.toFixed(2) +
+          " paused=" + audio.paused +
+          " muted=" + audio.muted +
+          " volume=" + audio.volume +
+          (audio.error ? " ERROR=" + (CODIGOS[audio.error.code] || audio.error.code) : "")
+        );
+      }
+
+      log("navegador: " + navigator.userAgent);
+      log("pantalla: " + innerWidth + "x" + innerHeight + " dpr=" + devicePixelRatio);
+
+      for (const ev of ["loadstart", "loadedmetadata", "canplay", "canplaythrough", "playing", "waiting", "stalled", "suspend", "error", "pause"]) {
+        audio.addEventListener(ev, () => log("evento de audio: " + ev));
+      }
+
+      // ¿Se descarga el mp3? Esto lo responde sin depender del elemento <audio>.
+      fetch("sound/cancion.mp3", { method: "GET" })
+        .then((r) => {
+          log("descarga del mp3: HTTP " + r.status + " tipo=" + r.headers.get("content-type"), r.ok ? "bien" : "mal");
+          return r.blob();
+        })
+        .then((b) => log("bytes descargados: " + b.size + " (deberían ser 1476576)", b.size === 1476576 ? "bien" : "mal"))
+        .catch((e) => log("descarga del mp3 FALLÓ: " + e, "mal"));
+
+      fetch("sound/letras.xml")
+        .then((r) => log("letras.xml: HTTP " + r.status, r.ok ? "bien" : "mal"))
+        .catch((e) => log("letras.xml FALLÓ: " + e, "mal"));
+
+      let intento = 0;
+
+      function probarPlay(origen) {
+        intento += 1;
+        const n = intento;
+        log("intento " + n + " (" + origen + "): llamando a play()");
+        log("   antes: " + estado());
+        let resuelto = false;
+        const promesa = audio.play();
+        if (!promesa) {
+          log("   play() no devolvió promesa (navegador viejo)", "mal");
+          return;
+        }
+        promesa.then(
+          () => {
+            resuelto = true;
+            log("intento " + n + ": play() OK — " + estado(), "bien");
+          },
+          (e) => {
+            resuelto = true;
+            log("intento " + n + ": play() RECHAZADO — " + e.name + ": " + e.message, "mal");
+            log("   estado: " + estado());
+          }
+        );
+        // Un play() que no resuelve nunca es el otro modo de fallo posible.
+        setTimeout(() => {
+          if (!resuelto) log("intento " + n + ": play() SIGUE COLGADO a los 5s — " + estado(), "mal");
+        }, 5000);
+      }
+
+      // 1) sin gesto: se espera que lo bloquee
+      probarPlay("automático, sin tocar");
+
+      // 2) con gesto real
+      document.getElementById("tocar").addEventListener("click", () => {
+        log("--- tocaste el botón ---");
+        log("activación de usuario: " + (navigator.userActivation ? navigator.userActivation.isActive : "no disponible"));
+        probarPlay("tras tu toque");
+        setTimeout(() => log("2s después del toque: " + estado()), 2000);
+        setTimeout(() => log("6s después del toque: " + estado()), 6000);
+      });
+    </script>
+  </body>
+</html>
