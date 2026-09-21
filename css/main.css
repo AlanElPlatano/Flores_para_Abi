@@ -91,15 +91,24 @@ body {
   text-shadow: 0 0 12px rgba(253, 221, 37, 0.65), 0 2px 8px rgba(0, 0, 0, 0.85);
 }
 
+/* El velo oscuro va aparte del texto: así el brillo se puede pintar SOLO sobre las
+   letras sin arrastrar el fondo. */
+body.awaiting-tap::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background-color: rgba(0, 0, 0, 0.72);
+}
+
 body.awaiting-tap::after {
   content: "Toca la pantalla para comenzar";
   position: fixed;
   inset: 0;
-  z-index: 10;
+  z-index: 11;
   display: grid;
   place-items: center;
   padding: 0 24px;
-  background-color: rgba(0, 0, 0, 0.72);
   color: #fddd25;
   font-family: "Arial Narrow", Arial, sans-serif;
   font-size: 20px;
@@ -107,7 +116,62 @@ body.awaiting-tap::after {
   letter-spacing: 4px;
   text-align: center;
   cursor: pointer;
+  /* Late, para que se lea como una invitación y no como un cartel de error.
+     Nota: `.animations-paused *` no frena esto. Ese selector alcanza a los
+     descendientes del body, y este es un pseudoelemento DEL body, así que late
+     mientras el jardín sigue congelado esperando el toque, que es justo lo que se
+     quiere. */
+  animation: tap-hint 2.4s ease-in-out infinite;
 }
+
+@keyframes tap-hint {
+  0%,
+  100% {
+    color: #fddd25;
+    text-shadow: 0 0 14px rgba(253, 221, 37, 0.55),
+      0 0 42px rgba(253, 221, 37, 0.28);
+  }
+  50% {
+    color: #c9ab1c;
+    text-shadow: 0 0 6px rgba(253, 221, 37, 0.15);
+  }
+}
+
+/* Donde se pueda recortar el fondo a la forma de las letras, el latido se cambia por un
+   brillo que las recorre, como el "Hola!" de la portada. Va dentro de un @supports
+   porque depende de `color: transparent`: si el navegador no soportara el recorte, el
+   texto sería invisible en vez de solo menos vistoso. */
+@supports (-webkit-background-clip: text) or (background-clip: text) {
+  body.awaiting-tap::after {
+    background-image: linear-gradient(
+      100deg,
+      #b49a10 0%,
+      #b49a10 40%,
+      #fff9d6 49%,
+      #ffffff 52%,
+      #fddd25 57%,
+      #b49a10 66%,
+      #b49a10 100%
+    );
+    background-size: 300% 100%;
+    background-repeat: no-repeat;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 0 22px rgba(253, 221, 37, 0.25);
+    animation: tap-sweep 3.4s linear infinite;
+  }
+}
+
+@keyframes tap-sweep {
+  from {
+    background-position: 130% 0;
+  }
+  to {
+    background-position: -30% 0;
+  }
+}
+
 .titulo {
   margin-bottom: 180px;
   font-family: "Arial Narrow", Arial, sans-serif;
