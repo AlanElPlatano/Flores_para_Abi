@@ -174,10 +174,7 @@ body.awaiting-tap::after {
 
 .titulo {
   margin-bottom: 180px;
-  /* "Noto Color Emoji" va primero, pero solo cubre el glifo del corazón de manos (la
-     hoja de Google Fonts trae únicamente ese carácter), así que el resto del texto sigue
-     cayendo en Arial Narrow igual que antes. */
-  font-family: "Noto Color Emoji", "Arial Narrow", Arial, sans-serif;
+  font-family: "Arial Narrow", Arial, sans-serif;
   color: yellow;
   position: absolute;
   font-weight: bold;
